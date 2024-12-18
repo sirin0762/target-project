@@ -11,36 +11,41 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.Map;
 
-@Aspect
-@Component
+//@Aspect
+//@Component
 public class JpaRepositoryLogger {
 
     private static final Logger log = LoggerFactory.getLogger(JpaRepositoryLogger.class);
 
-    private static final long SLOW_QUERY_THRESHOLD = 100;
+    private static final long SLOW_QUERY_THRESHOLD = 0;
 
     @Around("execution(* org.springframework.data.repository.CrudRepository+.*(..))")
     public Object measureExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
         String methodName = extractFullMethodName(joinPoint);
         long startTime = System.currentTimeMillis();
 
-        ThreadLocal<LocalQueryCounter> threadLocal = new ThreadLocal<>();
-        threadLocal.set(new LocalQueryCounter(methodName, startTime));
+        LocalJpaQueryContext.setLocalQueryCounter(new LocalQueryCounter(methodName, startTime));
+        GlobalJpaQueryContext.addMethodCall(methodName);
 
         Object result = joinPoint.proceed();
 
-        LocalQueryCounter queryCount = threadLocal.get();
+        LocalQueryCounter queryCount = LocalJpaQueryContext.getLocalQueryCounter();
 
         long endTime = System.currentTimeMillis();
         long executionTime = endTime - queryCount.getStartTime();
 
-        // 느린 메서드 감지
+        int callCountInLastHour = GlobalJpaQueryContext.getCallCountInLastHour(methodName, startTime, 600000);
+
+        if (callCountInLastHour > 10) {
+            System.err.println("⚠️ High usage detected: " + methodName + " called " + callCountInLastHour + " times in the last hour!");
+        }
+
         if (executionTime > SLOW_QUERY_THRESHOLD) {
             log.info("⚠️ Slow jpa method detected: {} took {} ms", queryCount.getMethodName(), executionTime);
         }
 
         for(Map.Entry<String, Integer> queryResult: queryCount.getQueryCounter().entrySet()) {
-            log.info("Invoked query information in method - invoked count: {}, invoked query string: {}", queryResult.getValue(), queryResult.getKey());
+            log.info("⚠️⚠️Invoked query in method - invoked count: {}, invoked query string: {}", queryResult.getValue(), queryResult.getKey());
         }
 
         return result;

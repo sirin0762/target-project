@@ -1,25 +1,24 @@
 package com.example.targetproject.jpa;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
-@Table(name = "users")
-@AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "teams")
 @Getter
-public class UserEntity {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class TeamEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,20 +27,16 @@ public class UserEntity {
     @Column
     private String name;
 
-    @Column
-    private String address;
+    @OneToMany(mappedBy = "team")
+    private List<UserEntity> users = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "team_id")
-    private TeamEntity team;
-
-    public UserEntity(String name, String address) {
+    public TeamEntity(String name) {
         this.name = name;
-        this.address = address;
     }
 
-    public void setTeam(TeamEntity teamEntity) {
-        this.team = teamEntity;
+    public void addUser(UserEntity user) {
+        this.users.add(user);
+        user.setTeam(this);
     }
 
 }

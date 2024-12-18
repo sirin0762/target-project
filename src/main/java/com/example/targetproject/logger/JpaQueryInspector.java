@@ -9,11 +9,9 @@ import java.util.Objects;
 @Component
 public class JpaQueryInspector implements StatementInspector {
 
-    private final ThreadLocal<LocalQueryCounter> threadLocal = new ThreadLocal<>();
-
     @Override
     public String inspect(String sql) {
-        LocalQueryCounter localQueryCounter = threadLocal.get();
+        LocalQueryCounter localQueryCounter = LocalJpaQueryContext.getLocalQueryCounter();
 
         if (Objects.nonNull(localQueryCounter)) {
             localQueryCounter.appendQuery(sql);

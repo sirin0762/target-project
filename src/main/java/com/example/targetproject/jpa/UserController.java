@@ -21,28 +21,23 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private BeanFactory beanFactory;
-
     @GetMapping("/ping")
     public String ping() {
-        log.info("Bean Detected: {}", beanFactory.getBean(OncePerRequestFilter.class));
         return "pong";
     }
 
     @GetMapping("/{id}")
     public String getUserName(@PathVariable(name = "id") Long id) {
-        log.info("Bean Detected: {}", beanFactory.getBean(OncePerRequestFilter.class));
         return userRepository.findById(id).get().getName();
     }
 
     @PostMapping
-    public void addUser(
-        @RequestParam String name,
-        @RequestParam String address
+    public Long addUser(
+        @RequestParam(name = "name") String name,
+        @RequestParam(name = "address") String address
     ) {
-       log.info("Bean Detected: {}", beanFactory.getBean(OncePerRequestFilter.class));
-       userRepository.save(new UserEntity(name, address));
+        UserEntity savedUser = userRepository.save(new UserEntity(name, address));
+        return savedUser.getId();
     }
 
 }
